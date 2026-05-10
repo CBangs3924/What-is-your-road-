@@ -179,13 +179,9 @@ cat("── Done. Results saved to us_roads_summary_2025.csv \n")
 
 # Load in Libraries
 
-library(tinytiger)
-library(tigris)
-library(ggmap)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
-library(sf)
 
 
 # Read in CSV File
