@@ -218,13 +218,6 @@ There are some unusual road suffix that are popular in certain counties like Fs,
 In general most of the rural areas have Rd as the most popular and urban areas have St or Dr.
 
 
-# Load in Libraries
-
-library(tidyverse)
-library(dplyr)
-library(ggplot2)
-
-
 # Read in CSV File
 
 us_roads_summary_2025 <- read_csv("us_roads_summary_2025.csv")
