@@ -282,3 +282,12 @@ ggplot(us_roads_summary_2025 %>% filter(suffix %in% c("RD","ST","DR", "AVE")),
   ) +
   
   theme_minimal()
+
+The first plot shows that a small number of road suffixes dominate street naming in the United States. 
+Road (RD), Street (ST), Drive (DR), and Avenue (AVE) appear far more often than the other suffixes, 
+with a noticeable drop in frequency after the top few categories. This suggests that the road names 
+across the country are heavily concentrated around common suffixes.
+
+The second plot shows the spread of counts for the four most common suffixes. Most places have lower road counts, 
+while only a few places have very high counts. The curves overlap a lot, which means the suffixes have similar patterns overall. 
+Even though the suffixes are different, their road counts are spread out in similar ways.
