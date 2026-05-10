@@ -220,7 +220,7 @@ In general most of the rural areas have Rd as the most popular and urban areas h
 
 # Read in CSV File
 
-us_roads_summary_2025 <- read_csv("us_roads_summary_2025.csv")
+us_roads2025 <- read_csv("us_roads2025.csv")
 
 options(scipen = 999) # Plot adjustment, make sure every number is fully printed out
 
@@ -228,7 +228,7 @@ options(scipen = 999) # Plot adjustment, make sure every number is fully printed
 # Plot
 # Group by suffix, descending order, keep only the most popular 10 suffixes
 
-us_roads_summary_2025 %>%
+us_roads2025 %>%
   group_by(suffix) %>%
   summarise(total = sum(n)) %>%
   arrange(desc(total)) %>%
@@ -265,7 +265,7 @@ us_roads_summary_2025 %>%
 # Filter out 4 most common suffixes
 # Used log scale
 
-ggplot(us_roads_summary_2025 %>% filter(suffix %in% c("RD","ST","DR", "AVE")),
+ggplot(us_roads2025 %>% filter(suffix %in% c("RD","ST","DR", "AVE")),
        aes(x = n, fill = suffix)) +
   geom_density(alpha = 0.4) +
     scale_fill_manual(values = c(
