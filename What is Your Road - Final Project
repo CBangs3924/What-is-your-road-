@@ -183,7 +183,7 @@ Our first plot investigates the most popular road suffix for U.S counties from o
 
 ```{r, echo = FALSE, message = FALSE, fig.width = 10, fig.height = 7.5}
 
-road_df <- read.csv("US_roads2025.csv") # Reads in summary of U.S roads
+road_df <- read.csv("us_roads2025.csv") # Reads in summary of U.S roads
 
 road_df <- road_df %>% 
   filter(road_df$GEOID < 60000) # Filters out GEOIDs greater than 60000 so Puerto Rico and other U.S. territories are not included 
