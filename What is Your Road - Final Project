@@ -9,6 +9,30 @@ library(sf)
 library(dplyr)
 library(stringr)
 library(magrittr)
+library(ggplot2)
+
+## United States Map
+This section creates a map of the United States with all the counties using tigris which allows us to download U.S. Census Bureau boundary shapefiles without downloading each individually.
+Then we attached the counties to our map files of the contiguous U.S. The contiguous United States is 48 states excluding Alaska, Hawaii, and any other U.S territories.
+
+```{r, echo = FALSE, message = FALSE, fig.width = 10, fig.height = 7.5}
+invisible(capture.output({ # Hides the loading bar in word document(used claude to help remove loading bar)
+  counties <- counties(cb = TRUE) # Downloads United States county lines
+}))
+
+# Create plot of United States with counties
+counties_plot = ggplot(data = counties) +
+  geom_sf(fill = "white", color = "black", linewidth = 0.1, alpha = 0.4) +
+  coord_sf(
+    xlim = c(-125, -67),   # longitude range for contiguous states
+    ylim = c(24.5, 49.4)       # latitude range for contiguous states
+  ) +
+  theme_minimal() + # Removes background design
+  theme(panel.grid = element_blank()) + # Removes coordinate lines
+  labs(title = "United States Map With Counties")
+
+counties_plot # Generate map
+```
 
 options(tigris_use_cache = TRUE)
 
