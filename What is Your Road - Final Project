@@ -1,3 +1,158 @@
+# Downloading the data
+
+library(rvest)
+library(httr)
+library(purrr)
+library(tigris)
+library(tinytiger)
+library(sf)
+library(dplyr)
+library(stringr)
+library(magrittr)
+
+options(tigris_use_cache = TRUE)
+
+# basic information 
+base_url  <- "https://www2.census.gov/geo/tiger/TIGER2025/ROADS/"
+out_dir   <- "tiger_roads_2025"
+out_gpkg  <- "us_roads_2025.gpkg"
+pattern   <- "\\d{5}"
+
+dir.create(out_dir, showWarnings = FALSE)
+
+#Scrape all zip file URLs from Census directory
+page <- read_html(base_url)
+
+file_urls <- page %>%
+  html_nodes("a") %>%
+  html_attr("href") %>%
+  grep("\\.zip$", ., value = TRUE) %>%
+  paste0(base_url, .)
+
+# Make sure the URLS match expected pattern tl_2025_\d{5}_roads.zip
+file_urls <- file_urls[grepl(paste0("tl_2025_", pattern, "_roads\\.zip$"), file_urls)]
+
+cat("Total files found:", length(file_urls), "\n")
+head(file_urls, 5)
+
+# Download in chunks of 25
+chunk_size <- 25
+total_downloads <- length(file_urls)
+
+for (start_i in seq(1, total_downloads, by = chunk_size)) {
+  end_i <- min(start_i + chunk_size - 1, total_downloads)
+  cat("Downloading files", start_i, "to", end_i, "\n")
+  
+  for (i in start_i:end_i) {
+    fname <- basename(file_urls[i])
+    dest  <- file.path(out_dir, fname)
+    
+    # Skip if already downloaded
+    if (file.exists(dest)) {
+      cat("[SKIP] Already exists:", fname, "\n")
+      next
+    }
+    #asked claude the best way to do this and it said to use a try catch
+    tryCatch({
+      download.file(
+        url      = file_urls[i],
+        destfile = dest,
+        mode     = "wb",
+        quiet    = TRUE
+      )
+      cat("[OK]", fname, "\n")
+    }, error = function(e) {
+      cat("[FAIL]", fname, "--", conditionMessage(e), "\n")
+    })
+    
+    Sys.sleep(0.1)
+  }
+}
+
+# unzip, read, extract what you need, delete the rest
+zip_files <- list.files(out_dir, pattern = "\\.zip$", full.names = TRUE)
+
+results <- list()
+
+for (zip_file in zip_files) {
+  
+  geoid    <- str_extract(basename(zip_file), pattern)
+  temp_dir <- tempfile()
+  dir.create(temp_dir)
+  
+  tryCatch({
+    
+    # Unzip to temp
+    unzip(zip_file, exdir = temp_dir)
+    
+    # Find shapefile
+    shp_file <- list.files(temp_dir, pattern = "\\.shp$", full.names = TRUE)
+    
+    # Read shapefile
+    roads <- st_read(shp_file[1], quiet = TRUE)
+    
+    #get rid of the cardinal directions
+    cardinal_directions <- c("\\bN\\b", "\\bNE\\b", "\\bE\\b", "\\bSE\\b", "\\bS\\b", "\\bSW\\b", "\\bW\\b", "\\bNW\\b")
+    
+    roads <- roads %>%
+      dplyr::mutate(
+        FULLNAME = str_replace_all(FULLNAME, paste(cardinal_directions, collapse = "|"), ""),
+        FULLNAME = str_trim(FULLNAME)
+      )
+    
+    #get rid of the numeric digits and replace with blank
+    roads <- roads %>%
+      dplyr::mutate(
+        FULLNAME = str_replace_all(FULLNAME, "\\d+", ""),
+        FULLNAME = str_trim(FULLNAME)
+      )
+    
+    # Extract suffix from SUFTYP or FULLNAME (used claude AI to help me with this part)
+    if ("SUFTYP" %in% names(roads)) {
+      roads$suffix <- roads$SUFTYP
+    } else if ("FULLNAME" %in% names(roads)) {
+      roads$suffix <- str_extract(roads$FULLNAME, "\\b\\w+$")
+    }
+    
+    # Clean suffix
+    roads <- roads %>%
+      dplyr::mutate(
+        suffix = str_to_upper(suffix),
+        suffix = str_replace_all(suffix, "\\.", ""),
+        suffix = str_trim(suffix)
+      )
+    
+    # Grab what you need — drop geometry, count suffixes
+    out <- roads %>%
+      st_drop_geometry() %>%
+      filter(!is.na(suffix), suffix != "") %>%
+      count(GEOID = geoid, suffix, name = "n") %>%
+      slice_max(n, n = 1, with_ties = FALSE)
+    
+    results[[geoid]] <- out
+    cat("[OK]", basename(zip_file), "\n")
+    
+  }, error = function(e) {
+    cat("[FAIL]", basename(zip_file), "--", conditionMessage(e), "\n")
+  })
+  
+  # Cleanup
+  unlink(temp_dir, recursive = TRUE)
+  
+  # Delete zip to save space
+  file.remove(zip_file)
+}
+
+# Combine and save into a csv and a rds file
+all_roads_summary <- bind_rows(results)
+
+write.csv(all_roads_summary, "us_roads_summary_2025.csv", row.names = FALSE)
+saveRDS(all_roads_summary,   "us_roads_summary_2025.rds")
+
+cat("── Done. Results saved to us_roads_summary_2025.csv \n")
+
+===========================================================================================================================
+
 # Load in Libraries
 
 library(tinytiger)
