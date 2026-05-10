@@ -183,12 +183,12 @@ Our first plot investigates the most popular road suffix for U.S counties from o
 
 ```{r, echo = FALSE, message = FALSE, fig.width = 10, fig.height = 7.5}
 
-road_df <- read.csv("us_roads2025.csv") # Reads in summary of U.S roads
+us_roads2025 <- read.csv("us_roads2025.csv") # Reads in summary of U.S roads
 
-road_df <- road_df %>% 
-  filter(road_df$GEOID < 60000) # Filters out GEOIDs greater than 60000 so Puerto Rico and other U.S. territories are not included 
+us_roads2025 <- us_roads2025 %>% 
+  filter(us_roads2025$GEOID < 60000) # Filters out GEOIDs greater than 60000 so Puerto Rico and other U.S. territories are not included 
 
-complete_rd_df <- road_df %>% 
+complete_rd_df <- us_roads2025 %>% 
   mutate(GEOID = sprintf("%05d", GEOID)) # Adds back the first-digit 0 to prepare for joining of map and data
 
 plot_1df <- counties %>% 
@@ -220,10 +220,7 @@ In general most of the rural areas have Rd as the most popular and urban areas h
 
 # Read in CSV File
 
-us_roads2025 <- read_csv("us_roads2025.csv")
-
 options(scipen = 999) # Plot adjustment, make sure every number is fully printed out
-
 
 # Plot
 # Group by suffix, descending order, keep only the most popular 10 suffixes
