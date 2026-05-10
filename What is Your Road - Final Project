@@ -10,6 +10,7 @@ library(dplyr)
 library(stringr)
 library(magrittr)
 library(ggplot2)
+library(pals)
 
 ## United States Map
 This section creates a map of the United States with all the counties using tigris which allows us to download U.S. Census Bureau boundary shapefiles without downloading each individually.
@@ -176,6 +177,46 @@ saveRDS(all_roads_summary,   "us_roads_summary_2025.rds")
 cat("── Done. Results saved to us_roads_summary_2025.csv \n")
 
 ===========================================================================================================================
+
+## Map of Most Popular Road Suffix
+Our first plot investigates the most popular road suffix for U.S counties from our data that we got above. This will focus on the United States contiguous states.
+
+```{r, echo = FALSE, message = FALSE, fig.width = 10, fig.height = 7.5}
+
+road_df <- read.csv("US_roads2025.csv") # Reads in summary of U.S roads
+
+road_df <- road_df %>% 
+  filter(road_df$GEOID < 60000) # Filters out GEOIDs greater than 60000 so Puerto Rico and other U.S. territories are not included 
+
+complete_rd_df <- road_df %>% 
+  mutate(GEOID = sprintf("%05d", GEOID)) # Adds back the first-digit 0 to prepare for joining of map and data
+
+plot_1df <- counties %>% 
+  left_join(complete_rd_df, by = "GEOID") # Join the road data to the shapefile by GEOID
+
+# Gets number of unique suffixes so polychrome generates enough colors
+n_suffixes <- length(unique(na.omit(plot_1df$suffix)))
+
+# Build the map
+plot1 <- ggplot(plot_1df) +
+  geom_sf(aes(fill = suffix), color = "black") + # Draw county lines
+  # Use polychrome to generate distinct colors
+  scale_fill_manual(values = unname(polychrome(n_suffixes)),
+    na.translate = FALSE) +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+    legend.key.size = unit(0.5, "cm"),
+    legend.text = element_text(size = 8),) + 
+  coord_sf(xlim = c(-125, -67), ylim = c(24.5, 49.4)) + # Longitude and latitude range to arrange map 
+  labs(title = "Most Common Road Suffix of Each County in the United States",
+    fill = "Suffix")
+
+plot1 # Generate Plot
+```
+The plot shows Rd is the most popular in the majority of counties with St coming in second. There are also other common suffix like Dr and Ave that have are popular. 
+There are some unusual road suffix that are popular in certain counties like Fs, Cir, and Pl. St is a very popular suffix in the Midwest region. 
+In general most of the rural areas have Rd as the most popular and urban areas have St or Dr.
+
 
 # Load in Libraries
 
