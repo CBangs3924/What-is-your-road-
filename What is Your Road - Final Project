@@ -1,0 +1,75 @@
+# Load in Libraries
+
+library(tinytiger)
+library(tigris)
+library(ggmap)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(sf)
+
+
+# Read in CSV File
+
+us_roads_summary_2025 <- read_csv("us_roads_summary_2025.csv")
+
+options(scipen = 999) # Plot adjustment, make sure every number is fully printed out
+
+
+# Plot
+# Group by suffix, descending order, keep only the most popular 10 suffixes
+
+us_roads_summary_2025 %>%
+  group_by(suffix) %>%
+  summarise(total = sum(n)) %>%
+  arrange(desc(total)) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = reorder(suffix, total), y = total, fill = suffix)) +
+  
+  geom_col() +
+  
+  # Labels on bars
+  geom_text(aes(label = total),
+            hjust = -0.1,
+            size = 4,
+            fontface = "bold") +
+  
+  coord_flip() +
+  
+  labs(
+    title = "Top 10 Road Suffixes in the USA",
+    x = "Suffix",
+    y = "Count"
+  ) +
+  
+  theme_minimal() +
+  
+  scale_y_continuous(expand = expansion(mult = c(0, 0.19))) +
+  
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    axis.text = element_text(face = "bold"),
+    legend.position = "none"
+  )
+
+# Distribution Plot
+# Filter out 4 most common suffixes
+# Used log scale
+
+ggplot(us_roads_summary_2025 %>% filter(suffix %in% c("RD","ST","DR", "AVE")),
+       aes(x = n, fill = suffix)) +
+  geom_density(alpha = 0.4) +
+    scale_fill_manual(values = c(
+    "ST" = "blue",
+    "RD" = "yellow",
+    "DR" = "green",
+    "AVE" = "red"
+    )) +
+  scale_x_log10() +
+  labs(
+    title = "Distribution of Road Counts by Suffix",
+    x = "Road Count",
+    y = "Density"
+  ) +
+  
+  theme_minimal()
